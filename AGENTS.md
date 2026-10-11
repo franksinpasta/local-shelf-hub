@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep all demo catalog, order and business state in one browser-safe React context shared by the admin and storefront routes; this keeps the demonstration coherent without persistence or a backend.
+- Use separate TanStack leaf routes for each main view and shared admin presentation components; this makes all demonstration sections directly navigable.
+- Keep availability, summaries and order totals in pure domain helpers with tests; this prevents contradictory demo numbers and keeps exact inventory out of public product projections.
