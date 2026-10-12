@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { DemoProvider } from "../features/kiosco/context";
+import { ThemeProvider } from "../components/theme-provider";
 
 function NotFoundComponent() {
   return (
@@ -106,6 +107,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="es-AR">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{__html:`try{var t=localStorage.getItem('kiosco-ya-theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark'}}catch(e){}`}} />
       </head>
       <body>
         {children}
@@ -121,7 +123,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <DemoProvider><Outlet /></DemoProvider>
+      <ThemeProvider><DemoProvider><Outlet /></DemoProvider></ThemeProvider>
     </QueryClientProvider>
   );
 }
