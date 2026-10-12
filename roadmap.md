@@ -3,3 +3,9 @@
 - [x] Inicio, catálogo, importación, stock, pedidos, negocio y tienda.
 - [x] Formularios, filtros, pedidos, carrito e importación simulados.
 - [x] Revisar navegación, pruebas y pantallas de escritorio y celular.
+- [ ] Agregar modo claro/oscuro completo y persistente durante recargas.
+- [ ] Reemplazar teléfono por alias de pago ficticio.
+- [ ] Integrar promociones editables en catálogo, tienda y carrito simulado.
+- [ ] Reemplazar "Existencia" por "Cantidad" en toda la experiencia.
+- [ ] Eliminar entrega a domicilio y estados asociados.
+- [ ] Verificar pruebas y recorridos en computadora, tablet y celular.
