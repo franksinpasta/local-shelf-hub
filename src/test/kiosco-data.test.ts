@@ -1,9 +1,10 @@
 import {describe,it,expect} from 'vitest';
-import {initialProducts,initialOrders,publicProducts,summarize,orderTotal,availability} from '@/features/kiosco/data';
+import {initialProducts,initialOrders,initialBusiness,publicProducts,summarize,orderTotal,availability,promotionalLineTotal} from '@/features/kiosco/data';
 describe('Demo consistency',()=>{
  it('public catalog hides exact inventory and unpublished products',()=>{const publicRows=publicProducts(initialProducts);expect(publicRows).toHaveLength(10);expect(publicRows.every(p=>!('stock' in p))).toBe(true);expect(publicRows.some(p=>p.id===11)).toBe(false);expect(publicRows.find(p=>p.id===5)?.availability).toBe('No disponible')});
  it('summary derives catalog and order numbers from the shared demo',()=>{expect(summarize(initialProducts,initialOrders)).toEqual({total:12,published:10,unpublished:2,pending:2,preparing:1,ready:1,low:3,empty:2})});
  it('order total uses quantity and item price',()=>{const order=initialOrders[0];if(!order)throw new Error('Missing demo order');expect(orderTotal(order)).toBe(6900)});
  it('availability distinguishes zero, low and available inventory',()=>{expect(availability(0)).toBe('Agotado');expect(availability(0,true)).toBe('No disponible');expect(availability(2)).toBe('Poco stock');expect(availability(24)).toBe('Disponible')});
  it('public changes reflect the same catalog price and publication',()=>{const edited=initialProducts.map(p=>p.id===1?{...p,price:4000,published:false}:p);expect(publicProducts(edited).some(p=>p.id===1)).toBe(false);expect(summarize(edited,initialOrders).published).toBe(9)});
+ it('applies promotions and pickup-only rules',()=>{const a=initialProducts[0],b=initialProducts[2],c=initialProducts[3],d=initialProducts[5];if(!a||!b||!c||!d)throw new Error('Missing demo products');expect(promotionalLineTotal(a,2)).toBe(3200);expect(promotionalLineTotal(b,3)).toBe(4800);expect(promotionalLineTotal(c,1)).toBe(1200);expect(promotionalLineTotal(d,1)).toBe(3500);expect(initialBusiness.paymentAlias).toBe('kiosco.ejemplo');expect(initialOrders.every(o=>o.delivery==='Retiro en el local')).toBe(true)});
 });
