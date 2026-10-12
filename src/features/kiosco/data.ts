@@ -12,7 +12,7 @@ import p10 from '@/assets/product-10.jpg';
 import p11 from '@/assets/product-11.jpg';
 import cover from '@/assets/store.jpg';
 export type Promotion={type:'2x1'|'3x2'|'percentage'|'fixed';value?:number};
-export type Product = {id:number; name:string; brand:string; code:string; category:string; price:number; stock:number; published:boolean; image:string;promotion?:Promotion};
+export type Product = {id:number; name:string; brand:string; code:string; category:string; price:number; stock:number; published:boolean; image:string;promotion?:Promotion|undefined};
 const rows: [string,string,string,number,number,boolean,string,Promotion?][] = [
  ['Coca-Cola original 1,5 L','Coca-Cola','Bebidas',3200,24,true,p0,{type:'2x1'}],
  ['Leche entera larga vida 1 L','La Serenísima','Almacén',1850,3,true,p1],
