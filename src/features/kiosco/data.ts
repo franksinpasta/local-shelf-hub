@@ -11,10 +11,12 @@ import p9 from '@/assets/product-9.jpg';
 import p10 from '@/assets/product-10.jpg';
 import p11 from '@/assets/product-11.jpg';
 import cover from '@/assets/store.jpg';
-export type Promotion={type:'2x1'|'3x2'|'percentage'|'fixed';value?:number};
+export type PromotionType='2x1'|'3x2'|'bundle'|'percentage'|'fixed';
+/** value: total del grupo (bundle), % (percentage) o precio por unidad (fixed). minQty: unidades requeridas. text: texto opcional para el cliente. */
+export type Promotion={type:PromotionType;value?:number|undefined;minQty?:number|undefined;text?:string|undefined};
 export type Product = {id:number; name:string; brand:string; code:string; category:string; price:number; stock:number; published:boolean; image:string;promotion?:Promotion|undefined};
 const rows: [string,string,string,number,number,boolean,string,Promotion?][] = [
- ['Coca-Cola original 1,5 L','Coca-Cola','Bebidas',3800,24,true,p0,{type:'3x2'}],
+ ['Coca-Cola original 1,5 L','Coca-Cola','Bebidas',3800,24,true,p0,{type:'bundle',minQty:3,value:9000}],
  ['Leche entera larga vida 1 L','La Serenísima','Almacén',1850,3,true,p1],
  ['Papas fritas clásicas 120 g',"Lay’s",'Snacks',2400,18,true,p2,{type:'2x1'}],
  ['Galletitas Oreo 118 g','Oreo','Galletitas',1500,12,true,p3,{type:'percentage',value:20}],
@@ -46,14 +48,23 @@ export type Business=typeof initialBusiness;
 export const money=(v:number)=>`$ ${new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(v)}`;
 export const availability=(stock:number,publicView=false)=>stock===0?(publicView?'No disponible':'Agotado'):stock<=4?'Poco stock':'Disponible';
 export const orderTotal=(o:Order)=>o.items.reduce((s,i)=>s+i.quantity*i.price,0);
-export const promotionLabel=(promotion?:Promotion)=>promotion?.type==='2x1'?'2x1':promotion?.type==='3x2'?'3x2':promotion?.type==='percentage'?`${promotion.value||0} % OFF`:promotion?.type==='fixed'?`Precio promo ${money(promotion.value||0)}`:'';
-export const promotionDetail=(promotion?:Promotion)=>promotion?.type==='2x1'?'Llevá 2 y pagá 1':promotion?.type==='3x2'?'Llevá 3 y pagá 2':promotion?.type==='percentage'?`${promotion.value||0} % de descuento`:promotion?.type==='fixed'?`Cada unidad a ${money(promotion.value||0)}`:'';
-export const promotionalUnitPrice=(product:{price:number;promotion?:Promotion|undefined})=>product.promotion?.type==='percentage'?Math.round(product.price*(1-(product.promotion.value||0)/100)):product.promotion?.type==='fixed'?(product.promotion.value||product.price):product.price;
-export type PromotionBreakdown={quantity:number;unitPrice:number;freeUnits:number;subtotal:number;discount:number;total:number};
-/** Una sola promoción por producto; 2x1/3x2 solo bonifican grupos completos. */
-export const promotionBreakdown=(product:{price:number;promotion?:Promotion|undefined},quantity:number):PromotionBreakdown=>{const q=Math.max(0,Math.floor(quantity));const subtotal=q*product.price;const t=product.promotion?.type;const freeUnits=t==='2x1'?Math.floor(q/2):t==='3x2'?Math.floor(q/3):0;const total=t==='2x1'||t==='3x2'?(q-freeUnits)*product.price:promotionalUnitPrice(product)*q;return {quantity:q,unitPrice:product.price,freeUnits,subtotal,discount:subtotal-total,total};};
+export const promotionMinQty=(p?:Promotion)=>!p?1:p.type==='2x1'?2:p.type==='3x2'?3:Math.max(1,Math.floor(p.minQty||1));
+const units=(n:number)=>`${n} ${n===1?'unidad':'unidades'}`;
+export const promotionLabel=(p?:Promotion)=>!p?'':p.type==='2x1'?'2x1':p.type==='3x2'?'3x2':p.type==='bundle'?`${promotionMinQty(p)} x ${money(p.value||0)}`:p.type==='percentage'?`${p.value||0} % OFF`:`Precio promo ${money(p.value||0)}`;
+export const promotionCondition=(p?:Promotion)=>{if(!p)return '';const n=promotionMinQty(p);return n<=1?'Desde 1 unidad':`Llevando ${units(n)}`;};
+export const autoPromotionText=(p?:Promotion)=>{if(!p)return '';const n=promotionMinQty(p);switch(p.type){case '2x1':return 'Llevá 2 y pagá 1';case '3x2':return 'Llevá 3 y pagá 2';case 'bundle':return `${units(n)} por ${money(p.value||0)}`;case 'percentage':return n>1?`${p.value||0} % de descuento llevando ${units(n)} o más`:`${p.value||0} % de descuento por unidad`;case 'fixed':return n>1?`Cada unidad a ${money(p.value||0)} llevando ${units(n)} o más`:`Cada unidad a ${money(p.value||0)}`;}};
+export const promotionDetail=(p?:Promotion)=>p?.text?.trim()||autoPromotionText(p);
+/** Precio unitario promocional solo cuando la promo es por unidad y se cumple la cantidad. */
+export const promotionalUnitPrice=(product:{price:number;promotion?:Promotion|undefined},quantity=promotionMinQty(product.promotion))=>{const p=product.promotion;if(!p||quantity<promotionMinQty(p))return product.price;return p.type==='percentage'?Math.round(product.price*(1-(p.value||0)/100)):p.type==='fixed'?(p.value??product.price):product.price;};
+export type PromotionBreakdown={quantity:number;unitPrice:number;freeUnits:number;promoGroups:number;subtotal:number;discount:number;total:number;applied:boolean};
+/** Una sola promoción por producto; el precio normal nunca se modifica. */
+export const promotionBreakdown=(product:{price:number;promotion?:Promotion|undefined},quantity:number):PromotionBreakdown=>{const q=Math.max(0,Math.floor(quantity));const price=product.price;const subtotal=q*price;const p=product.promotion;const n=promotionMinQty(p);let total=subtotal,freeUnits=0,promoGroups=0;
+ if(p&&q>=n){if(p.type==='2x1'||p.type==='3x2'){promoGroups=Math.floor(q/n);freeUnits=promoGroups;total=(q-freeUnits)*price;}else if(p.type==='bundle'){promoGroups=Math.floor(q/n);total=promoGroups*(p.value||0)+(q-promoGroups*n)*price;}else{promoGroups=1;total=promotionalUnitPrice(product,q)*q;}}
+ total=Math.min(total,subtotal);return {quantity:q,unitPrice:price,freeUnits,promoGroups,subtotal,discount:subtotal-total,total,applied:subtotal-total>0};};
 export const promotionalLineTotal=(product:{price:number;promotion?:Promotion|undefined},quantity:number)=>promotionBreakdown(product,quantity).total;
-export const hasUnitDiscount=(promotion?:Promotion)=>promotion?.type==='percentage'||promotion?.type==='fixed';
+export const hasUnitDiscount=(p?:Promotion)=>(p?.type==='percentage'||p?.type==='fixed')&&promotionMinQty(p)<=1;
+/** Devuelve un mensaje de error o '' si la configuración es válida. */
+export const validateProduct=(price:number,promotion?:Promotion)=>{if(!Number.isFinite(price)||price<=0)return 'El precio normal debe ser un número mayor a 0.';if(!promotion)return '';if(promotion.type==='bundle'||promotion.type==='percentage'||promotion.type==='fixed'){const m=promotion.minQty;if(m===undefined||!Number.isInteger(m)||m<1)return 'La cantidad mínima debe ser un número entero positivo.';if(promotion.type==='bundle'&&m<2)return 'El precio especial por cantidad requiere al menos 2 unidades.';const v=promotion.value;if(v===undefined||!Number.isFinite(v)||v<=0)return promotion.type==='percentage'?'Ingresá un porcentaje válido.':'Ingresá un precio promocional válido.';if(promotion.type==='percentage'&&v>=100)return 'El porcentaje debe ser menor a 100.';if(promotion.type==='fixed'&&v>=price)return 'El precio promocional por unidad debe ser menor al precio normal.';if(promotion.type==='bundle'&&v>=price*m)return `El precio del grupo debe ser menor a ${money(price*m)} (precio normal de ${m} unidades).`;}return '';};
 export const publicProducts=(products:Product[])=>products.filter(p=>p.published).map(({stock,...p})=>({...p,availability:availability(stock,true)}));
 export const summarize=(products:Product[],orders:Order[])=>({total:products.length,published:products.filter(p=>p.published).length,unpublished:products.filter(p=>!p.published).length,pending:orders.filter(o=>o.status==='Pendiente').length,preparing:orders.filter(o=>o.status==='En preparación').length,ready:orders.filter(o=>o.status==='Listo para retirar').length,low:products.filter(p=>p.stock>0&&p.stock<=4).length,empty:products.filter(p=>p.stock===0).length});
 export function pageHead(title:string,description:string){return {meta:[{title:`${title} · Kiosco Ya`},{name:'description',content:description},{property:'og:title',content:`${title} · Kiosco Ya`},{property:'og:description',content:description},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]};}
