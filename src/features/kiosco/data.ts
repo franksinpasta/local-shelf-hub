@@ -14,9 +14,9 @@ import cover from '@/assets/store.jpg';
 export type Promotion={type:'2x1'|'3x2'|'percentage'|'fixed';value?:number};
 export type Product = {id:number; name:string; brand:string; code:string; category:string; price:number; stock:number; published:boolean; image:string;promotion?:Promotion|undefined};
 const rows: [string,string,string,number,number,boolean,string,Promotion?][] = [
- ['Coca-Cola original 1,5 L','Coca-Cola','Bebidas',3200,24,true,p0,{type:'2x1'}],
+ ['Coca-Cola original 1,5 L','Coca-Cola','Bebidas',3800,24,true,p0,{type:'3x2'}],
  ['Leche entera larga vida 1 L','La Serenísima','Almacén',1850,3,true,p1],
- ['Papas fritas clásicas 120 g',"Lay’s",'Snacks',2400,18,true,p2,{type:'3x2'}],
+ ['Papas fritas clásicas 120 g',"Lay’s",'Snacks',2400,18,true,p2,{type:'2x1'}],
  ['Galletitas Oreo 118 g','Oreo','Galletitas',1500,12,true,p3,{type:'percentage',value:20}],
  ['Sprite lima limón 1,5 L','Sprite','Bebidas',2900,0,true,p4],
  ['Bebida energética 473 ml','Monster','Bebidas',4200,4,true,p5,{type:'fixed',value:3500}],
@@ -47,9 +47,13 @@ export const money=(v:number)=>`$ ${new Intl.NumberFormat('es-AR',{maximumFracti
 export const availability=(stock:number,publicView=false)=>stock===0?(publicView?'No disponible':'Agotado'):stock<=4?'Poco stock':'Disponible';
 export const orderTotal=(o:Order)=>o.items.reduce((s,i)=>s+i.quantity*i.price,0);
 export const promotionLabel=(promotion?:Promotion)=>promotion?.type==='2x1'?'2x1':promotion?.type==='3x2'?'3x2':promotion?.type==='percentage'?`${promotion.value||0} % OFF`:promotion?.type==='fixed'?`Precio promo ${money(promotion.value||0)}`:'';
-export const promotionDetail=(promotion?:Promotion)=>promotion?.type==='2x1'?'Llevás 2 y pagás 1':promotion?.type==='3x2'?'Llevás 3 y pagás 2':promotion?.type==='percentage'?`${promotion.value||0} % de descuento`:promotion?.type==='fixed'?`Cada unidad a ${money(promotion.value||0)}`:'';
+export const promotionDetail=(promotion?:Promotion)=>promotion?.type==='2x1'?'Llevá 2 y pagá 1':promotion?.type==='3x2'?'Llevá 3 y pagá 2':promotion?.type==='percentage'?`${promotion.value||0} % de descuento`:promotion?.type==='fixed'?`Cada unidad a ${money(promotion.value||0)}`:'';
 export const promotionalUnitPrice=(product:{price:number;promotion?:Promotion|undefined})=>product.promotion?.type==='percentage'?Math.round(product.price*(1-(product.promotion.value||0)/100)):product.promotion?.type==='fixed'?(product.promotion.value||product.price):product.price;
-export const promotionalLineTotal=(product:{price:number;promotion?:Promotion|undefined},quantity:number)=>product.promotion?.type==='2x1'?Math.ceil(quantity/2)*product.price:product.promotion?.type==='3x2'?(Math.floor(quantity/3)*2+quantity%3)*product.price:promotionalUnitPrice(product)*quantity;
+export type PromotionBreakdown={quantity:number;unitPrice:number;freeUnits:number;subtotal:number;discount:number;total:number};
+/** Una sola promoción por producto; 2x1/3x2 solo bonifican grupos completos. */
+export const promotionBreakdown=(product:{price:number;promotion?:Promotion|undefined},quantity:number):PromotionBreakdown=>{const q=Math.max(0,Math.floor(quantity));const subtotal=q*product.price;const t=product.promotion?.type;const freeUnits=t==='2x1'?Math.floor(q/2):t==='3x2'?Math.floor(q/3):0;const total=t==='2x1'||t==='3x2'?(q-freeUnits)*product.price:promotionalUnitPrice(product)*q;return {quantity:q,unitPrice:product.price,freeUnits,subtotal,discount:subtotal-total,total};};
+export const promotionalLineTotal=(product:{price:number;promotion?:Promotion|undefined},quantity:number)=>promotionBreakdown(product,quantity).total;
+export const hasUnitDiscount=(promotion?:Promotion)=>promotion?.type==='percentage'||promotion?.type==='fixed';
 export const publicProducts=(products:Product[])=>products.filter(p=>p.published).map(({stock,...p})=>({...p,availability:availability(stock,true)}));
 export const summarize=(products:Product[],orders:Order[])=>({total:products.length,published:products.filter(p=>p.published).length,unpublished:products.filter(p=>!p.published).length,pending:orders.filter(o=>o.status==='Pendiente').length,preparing:orders.filter(o=>o.status==='En preparación').length,ready:orders.filter(o=>o.status==='Listo para retirar').length,low:products.filter(p=>p.stock>0&&p.stock<=4).length,empty:products.filter(p=>p.stock===0).length});
 export function pageHead(title:string,description:string){return {meta:[{title:`${title} · Kiosco Ya`},{name:'description',content:description},{property:'og:title',content:`${title} · Kiosco Ya`},{property:'og:description',content:description},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]};}
