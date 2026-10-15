@@ -31,18 +31,26 @@ const rows: [string,string,string,number,number,boolean,string,Promotion?][] = [
 ];
 export const initialProducts:Product[]=rows.map((r,i)=>({id:i+1,name:r[0],brand:r[1],category:r[2],price:r[3],stock:r[4],published:r[5],image:r[6],promotion:r[7],code:`779000000${String(i+1).padStart(4,'0')}`}));
 export const categories=['Bebidas','Golosinas','Snacks','Almacén','Galletitas','Limpieza'];
-export const statuses=['Pendiente','En preparación','Listo para retirar','Entregado','Cancelado'] as const;
+export const statuses=['Pendiente','En preparación','Listo para retirar','Entregado','Rechazado'] as const;
 export type OrderStatus=typeof statuses[number];
-export type Order={id:number; customer:string; time:string; date:string; delivery:'Retiro en el local';status:OrderStatus;items:{productId:number;quantity:number;price:number}[]};
+export type Order={id:number; customer:string; time:string; date:string; delivery:'Retiro en el local';status:OrderStatus;iso:string;payment?:string|undefined;items:{productId:number;quantity:number;price:number}[]};
 export const initialOrders:Order[]=[
- {id:1048,customer:'Lucía Fernández',time:'10:42',date:'11 oct. 2026',delivery:'Retiro en el local',status:'Pendiente',items:[{productId:1,quantity:1,price:3200},{productId:2,quantity:2,price:1850}]},
- {id:1047,customer:'Martín Gómez',time:'10:28',date:'11 oct. 2026',delivery:'Retiro en el local',status:'Pendiente',items:[{productId:3,quantity:2,price:2400},{productId:4,quantity:1,price:1500}]},
- {id:1046,customer:'Camila Torres',time:'10:15',date:'11 oct. 2026',delivery:'Retiro en el local',status:'En preparación',items:[{productId:6,quantity:2,price:2800}]},
- {id:1045,customer:'Diego Ruiz',time:'09:56',date:'11 oct. 2026',delivery:'Retiro en el local',status:'Listo para retirar',items:[{productId:7,quantity:1,price:3100},{productId:8,quantity:1,price:1400}]},
- {id:1044,customer:'Sofía Medina',time:'09:35',date:'11 oct. 2026',delivery:'Retiro en el local',status:'Listo para retirar',items:[{productId:9,quantity:3,price:1200}]},
- {id:1043,customer:'Nicolás Vera',time:'09:12',date:'11 oct. 2026',delivery:'Retiro en el local',status:'Entregado',items:[{productId:1,quantity:2,price:3200}]},
- {id:1042,customer:'Ana Molina',time:'18:20',date:'10 oct. 2026',delivery:'Retiro en el local',status:'Cancelado',items:[{productId:3,quantity:1,price:2400}]},
+ {id:1048,customer:'Lucía Fernández',time:'10:42',date:'11 oct. 2026',iso:'2026-10-11',delivery:'Retiro en el local',payment:'Efectivo al retirar',status:'Pendiente',items:[{productId:1,quantity:1,price:3200},{productId:2,quantity:2,price:1850}]},
+ {id:1047,customer:'Martín Gómez',time:'10:28',date:'11 oct. 2026',iso:'2026-10-11',delivery:'Retiro en el local',payment:'Transferencia al alias',status:'Pendiente',items:[{productId:3,quantity:2,price:2400},{productId:4,quantity:1,price:1500}]},
+ {id:1046,customer:'Camila Torres',time:'10:15',date:'11 oct. 2026',iso:'2026-10-11',delivery:'Retiro en el local',payment:'Efectivo al retirar',status:'En preparación',items:[{productId:6,quantity:2,price:2800}]},
+ {id:1045,customer:'Diego Ruiz',time:'09:56',date:'11 oct. 2026',iso:'2026-10-11',delivery:'Retiro en el local',payment:'Transferencia al alias',status:'Listo para retirar',items:[{productId:7,quantity:1,price:3100},{productId:8,quantity:1,price:1400}]},
+ {id:1044,customer:'Sofía Medina',time:'09:35',date:'11 oct. 2026',iso:'2026-10-11',delivery:'Retiro en el local',payment:'Efectivo al retirar',status:'Listo para retirar',items:[{productId:9,quantity:3,price:1200}]},
+ {id:1043,customer:'Nicolás Vera',time:'09:12',date:'11 oct. 2026',iso:'2026-10-11',delivery:'Retiro en el local',payment:'Transferencia al alias',status:'Entregado',items:[{productId:1,quantity:2,price:3200}]},
+ {id:1042,customer:'Ana Molina',time:'18:20',date:'10 oct. 2026',iso:'2026-10-10',delivery:'Retiro en el local',payment:'Efectivo al retirar',status:'Rechazado',items:[{productId:3,quantity:1,price:2400}]},
 ];
+const MONTHS=['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.'];
+export const DEMO_TODAY='2026-10-11';
+const isoShift=(iso:string,days:number)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
+export const displayDate=(iso:string)=>{const [y,m,d]=iso.split('-').map(Number);return `${d} ${MONTHS[(m||1)-1]} ${y}`};
+const histNames=['Valentina Ríos','Joaquín Paz','Florencia Sosa','Tomás Acuña','Julieta Benítez','Bruno Castro','Micaela Luna','Franco Ojeda'];
+const histPrices=[3800,1850,2400,1500,2900,4200,3100,1400,1200,2600];
+/** Pedidos ficticios anteriores, solo para probar el historial de ventas. */
+export const historyOrders:Order[]=Array.from({length:30},(_,k)=>{const daysAgo=2+Math.floor(k*1.45);const iso=isoShift(DEMO_TODAY,-daysAgo);const a=(k%10)+1,b=((k*3+4)%10)+1;const items=[{productId:a,quantity:1+(k%3),price:histPrices[a-1]||1000},...(a!==b&&k%2===0?[{productId:b,quantity:1,price:histPrices[b-1]||1000}]:[])];return {id:1041-k,customer:histNames[k%histNames.length]||'Cliente',time:`${String(9+(k*5)%13).padStart(2,'0')}:${String((k*17)%60).padStart(2,'0')}`,date:displayDate(iso),iso,delivery:'Retiro en el local',status:k%6===4?'Rechazado':'Entregado',payment:k%2?'Efectivo al retirar':'Transferencia al alias',items}});
 export const initialBusiness={name:'Kiosco La Esquina',address:'Calle del Encuentro 245, Río Grande',paymentAlias:'kiosco.ejemplo',hours:'Todos los días de 8:00 a 23:00',description:'Tu kiosco de todos los días. Bebidas, algo rico y todo lo que necesitás, cerca de casa.',pickupInfo:'Retirá tu pedido por el mostrador del local.',published:true,pickup:true,cover,logo:cover};
 export type Business=typeof initialBusiness;
 export const money=(v:number)=>`$ ${new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(v)}`;
@@ -68,3 +76,12 @@ export const validateProduct=(price:number,promotion?:Promotion)=>{if(!Number.is
 export const publicProducts=(products:Product[])=>products.filter(p=>p.published).map(({stock,...p})=>({...p,availability:availability(stock,true)}));
 export const summarize=(products:Product[],orders:Order[])=>({total:products.length,published:products.filter(p=>p.published).length,unpublished:products.filter(p=>!p.published).length,pending:orders.filter(o=>o.status==='Pendiente').length,preparing:orders.filter(o=>o.status==='En preparación').length,ready:orders.filter(o=>o.status==='Listo para retirar').length,low:products.filter(p=>p.stock>0&&p.stock<=4).length,empty:products.filter(p=>p.stock===0).length});
 export function pageHead(title:string,description:string){return {meta:[{title:`${title} · Kiosco Ya`},{name:'description',content:description},{property:'og:title',content:`${title} · Kiosco Ya`},{property:'og:description',content:description},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]};}
+
+export type HistoryGroup='Entregado'|'Rechazado'|'Pendiente';
+/** Estado del historial: los pedidos aún sin resolver (pendiente, en preparación, listo) cuentan como pendientes. */
+export const historyGroup=(s:OrderStatus):HistoryGroup=>s==='Entregado'?'Entregado':s==='Rechazado'?'Rechazado':'Pendiente';
+export type Period='hoy'|'7d'|'30d'|'mes'|'rango';
+export const periodRange=(period:Period,today=DEMO_TODAY,from?:string,to?:string):[string,string]=>period==='hoy'?[today,today]:period==='7d'?[isoShift(today,-6),today]:period==='30d'?[isoShift(today,-29),today]:period==='mes'?[today.slice(0,8)+'01',today]:[from||'0000-01-01',to||'9999-12-31'];
+export const inRange=(o:Order,[a,b]:[string,string])=>o.iso>=a&&o.iso<=b;
+export const sortRecent=(orders:Order[])=>[...orders].sort((x,y)=>(y.iso+y.time).localeCompare(x.iso+x.time)||y.id-x.id);
+export const historyStats=(orders:Order[])=>{const unique=[...new Map(orders.map(o=>[o.id,o])).values()];const r={delivered:0,rejected:0,pending:0,revenue:0,rejectedAmount:0,pendingAmount:0,total:unique.length,averageTicket:0,pct:{Entregado:0,Rechazado:0,Pendiente:0} as Record<HistoryGroup,number>};for(const o of unique){const g=historyGroup(o.status),t=orderTotal(o);if(g==='Entregado'){r.delivered++;r.revenue+=t}else if(g==='Rechazado'){r.rejected++;r.rejectedAmount+=t}else{r.pending++;r.pendingAmount+=t}}r.averageTicket=r.delivered?Math.round(r.revenue/r.delivered):0;if(r.total){r.pct={Entregado:Math.round(r.delivered/r.total*1000)/10,Rechazado:Math.round(r.rejected/r.total*1000)/10,Pendiente:Math.round(r.pending/r.total*1000)/10}}return r};
