@@ -15,3 +15,11 @@ describe('Demo consistency',()=>{
  it('min quantity gates percentage and per-unit price',()=>{const pct={price:1000,promotion:{type:'percentage' as const,minQty:3,value:10}};expect([2,3,4].map(q=>promotionalLineTotal(pct,q))).toEqual([2000,2700,3600]);const fx={price:4200,promotion:{type:'fixed' as const,minQty:2,value:3000}};expect([1,2,3].map(q=>promotionalLineTotal(fx,q))).toEqual([4200,6000,9000])});
  it('validates prices and minimum quantities',()=>{expect(validateProduct(0)).not.toBe('');expect(validateProduct(1000,{type:'bundle',minQty:2.5,value:1500})).not.toBe('');expect(validateProduct(1000,{type:'fixed',minQty:0,value:500})).not.toBe('');expect(validateProduct(1000,{type:'percentage',minQty:1,value:NaN})).not.toBe('');expect(validateProduct(3800,{type:'bundle',minQty:3,value:9000})).toBe('')});
 });
+import {historyStats,periodRange,inRange,sortRecent,historyOrders} from '@/features/kiosco/data';
+describe('Sales history',()=>{
+ const mk=(id:number,status:any,price:number,iso='2026-10-11')=>({id,customer:'x',time:'10:00',date:'',iso,delivery:'Retiro en el local' as const,status,items:[{productId:1,quantity:1,price}]});
+ it('counts revenue only from delivered and percentages by order count',()=>{const s=historyStats([mk(1,'Entregado',1000),mk(2,'Entregado',3000),mk(3,'Rechazado',9000),mk(4,'En preparación',500)]);expect(s.revenue).toBe(4000);expect(s.rejectedAmount).toBe(9000);expect(s.pendingAmount).toBe(500);expect(s.averageTicket).toBe(2000);expect(s.pct).toEqual({Entregado:50,Rechazado:25,Pendiente:25})});
+ it('never counts an order twice',()=>{const o=mk(1,'Entregado',1000);expect(historyStats([o,o]).total).toBe(1)});
+ it('periods filter by date',()=>{expect(periodRange('7d','2026-10-11')).toEqual(['2026-10-05','2026-10-11']);expect(periodRange('mes','2026-10-11')).toEqual(['2026-10-01','2026-10-11']);expect(inRange(mk(1,'Entregado',1,'2026-10-04'),periodRange('7d','2026-10-11'))).toBe(false)});
+ it('sorts most recent first',()=>{expect(sortRecent([mk(1,'Entregado',1,'2026-10-01'),mk(2,'Entregado',1,'2026-10-09')]).map(o=>o.id)).toEqual([2,1]);expect(new Set(historyOrders.map(o=>o.id)).size).toBe(historyOrders.length)});
+});
