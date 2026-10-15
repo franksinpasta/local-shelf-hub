@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as HistorialRouteImport } from './routes/historial'
 import { Route as ImportarRouteImport } from './routes/importar'
 import { Route as NegocioRouteImport } from './routes/negocio'
 import { Route as PedidosRouteImport } from './routes/pedidos'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const CatalogoRoute = CatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistorialRoute = HistorialRouteImport.update({
+  id: '/historial',
+  path: '/historial',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportarRoute = ImportarRouteImport.update({
@@ -56,6 +62,7 @@ const TiendaRoute = TiendaRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/catalogo': typeof CatalogoRoute
+  '/historial': typeof HistorialRoute
   '/importar': typeof ImportarRoute
   '/negocio': typeof NegocioRoute
   '/pedidos': typeof PedidosRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/catalogo': typeof CatalogoRoute
+  '/historial': typeof HistorialRoute
   '/importar': typeof ImportarRoute
   '/negocio': typeof NegocioRoute
   '/pedidos': typeof PedidosRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/catalogo': typeof CatalogoRoute
+  '/historial': typeof HistorialRoute
   '/importar': typeof ImportarRoute
   '/negocio': typeof NegocioRoute
   '/pedidos': typeof PedidosRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/catalogo'
+    | '/historial'
     | '/importar'
     | '/negocio'
     | '/pedidos'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/catalogo'
+    | '/historial'
     | '/importar'
     | '/negocio'
     | '/pedidos'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/catalogo'
+    | '/historial'
     | '/importar'
     | '/negocio'
     | '/pedidos'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CatalogoRoute: typeof CatalogoRoute
+  HistorialRoute: typeof HistorialRoute
   ImportarRoute: typeof ImportarRoute
   NegocioRoute: typeof NegocioRoute
   PedidosRoute: typeof PedidosRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/catalogo'
       fullPath: '/catalogo'
       preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/historial': {
+      id: '/historial'
+      path: '/historial'
+      fullPath: '/historial'
+      preLoaderRoute: typeof HistorialRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/importar': {
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CatalogoRoute: CatalogoRoute,
+  HistorialRoute: HistorialRoute,
   ImportarRoute: ImportarRoute,
   NegocioRoute: NegocioRoute,
   PedidosRoute: PedidosRoute,
