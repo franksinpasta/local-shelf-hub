@@ -1,5 +1,5 @@
 // Pure helpers for Open Food Facts barcode lookups (browser-safe, no keys needed).
-export type LookupResult = {name?: string; brand?: string; size?: string; image?: string};
+export type LookupResult = {name?: string | undefined; brand?: string | undefined; size?: string | undefined; image?: string | undefined};
 export type LookupStatus = 'idle' | 'searching' | 'found' | 'not-found' | 'error';
 
 export function normalizeBarcode(raw: string): string {
@@ -27,7 +27,7 @@ export function parseOpenFoodFacts(json: unknown): LookupResult | null {
 
 export async function lookupBarcode(code: string, signal?: AbortSignal): Promise<LookupResult | null> {
   const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,product_name_es,brands,quantity,image_front_url,image_url`;
-  const res = await fetch(url, {signal, headers: {Accept: 'application/json'}});
+  const res = await fetch(url, {signal: signal ?? null, headers: {Accept: 'application/json'}});
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return parseOpenFoodFacts(await res.json());
