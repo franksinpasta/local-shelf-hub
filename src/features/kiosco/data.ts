@@ -14,7 +14,7 @@ import cover from '@/assets/store.jpg';
 export type PromotionType='2x1'|'3x2'|'bundle'|'percentage'|'fixed';
 /** value: total del grupo (bundle), % (percentage) o precio por unidad (fixed). minQty: unidades requeridas. text: texto opcional para el cliente. */
 export type Promotion={type:PromotionType;value?:number|undefined;minQty?:number|undefined;text?:string|undefined};
-export type Product = {id:number; name:string; brand:string; code:string; category:string; price:number; stock:number; published:boolean; image:string;promotion?:Promotion|undefined};
+export type Product = {id:number; name:string; brand:string; code:string; category:string; price:number; stock:number; published:boolean; image:string;size?:string|undefined;promotion?:Promotion|undefined};
 const rows: [string,string,string,number,number,boolean,string,Promotion?][] = [
  ['Coca-Cola original 1,5 L','Coca-Cola','Bebidas',3800,24,true,p0,{type:'bundle',minQty:3,value:9000}],
  ['Leche entera larga vida 1 L','La Serenísima','Almacén',1850,3,true,p1],
