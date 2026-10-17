@@ -30,7 +30,7 @@ const rows: [string,string,string,number,number,boolean,string,Promotion?][] = [
  ['Galletitas surtidas 400 g','Terrabusi','Galletitas',2100,9,false,p11],
 ];
 export const initialProducts:Product[]=rows.map((r,i)=>({id:i+1,name:r[0],brand:r[1],category:r[2],price:r[3],stock:r[4],published:r[5],image:r[6],promotion:r[7],code:`779000000${String(i+1).padStart(4,'0')}`}));
-export const categories=['Bebidas','Golosinas','Snacks','Almacén','Galletitas','Limpieza'];
+export const categories=['Bebidas','Golosinas','Snacks','Almacén','Galletitas','Limpieza','Higiene personal','Librería','Otros'];
 export const statuses=['Pendiente','En preparación','Listo para retirar','Entregado','Rechazado'] as const;
 export type OrderStatus=typeof statuses[number];
 export type Order={id:number; customer:string; time:string; date:string; delivery:'Retiro en el local';status:OrderStatus;iso:string;payment?:string|undefined;items:{productId:number;quantity:number;price:number}[]};
