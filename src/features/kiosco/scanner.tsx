@@ -39,8 +39,8 @@ export function BarcodeScanner({onFound, findDuplicate, onEditExisting}: Props) 
         if (result) {
           const c = normalizeBarcode(result.getText());
           controls.stop(); stopRef.current = null; setCamera(false);
-          setCode(c); setStatus('idle'); setDup(undefined);
           inputRef.current?.focus();
+          void search(c);
         }
       });
       stopRef.current = () => controls.stop();
@@ -54,8 +54,8 @@ export function BarcodeScanner({onFound, findDuplicate, onEditExisting}: Props) 
   }
   function stopCamera() { stopRef.current?.(); stopRef.current = null; setCamera(false); }
 
-  async function search() {
-    const c = normalizeBarcode(code);
+  async function search(raw: string = code) {
+    const c = normalizeBarcode(raw);
     setCode(c); setDup(undefined);
     if (!isValidBarcode(c)) { setFieldError('Ingresá un código de 6 a 14 números.'); return; }
     setFieldError('');
