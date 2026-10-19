@@ -1,10 +1,8 @@
 import {useEffect, useRef, useState} from 'react';
-import {useServerFn} from '@tanstack/react-start';
 import {Camera, CameraOff, Keyboard, Search, Loader2, CheckCircle2, AlertTriangle, WifiOff, ScanBarcode} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
-import {isValidBarcode, normalizeBarcode, type LookupResult, type LookupStatus} from './barcode';
-import {lookupEzCatalog} from '@/lib/ez-catalog.functions';
+import {isValidBarcode, lookupBarcode, normalizeBarcode, type LookupResult, type LookupStatus} from './barcode';
 
 type Props = {
   onFound: (code: string, data: LookupResult | null) => void;
@@ -13,7 +11,6 @@ type Props = {
 };
 
 export function BarcodeScanner({onFound, findDuplicate, onEditExisting}: Props) {
-  const lookup = useServerFn(lookupEzCatalog);
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<LookupStatus>('idle');
   const [camera, setCamera] = useState(false);
@@ -39,8 +36,8 @@ export function BarcodeScanner({onFound, findDuplicate, onEditExisting}: Props) 
         if (result) {
           const c = normalizeBarcode(result.getText());
           controls.stop(); stopRef.current = null; setCamera(false);
+          setCode(c); setStatus('idle'); setDup(undefined);
           inputRef.current?.focus();
-          void search(c);
         }
       });
       stopRef.current = () => controls.stop();
@@ -54,8 +51,8 @@ export function BarcodeScanner({onFound, findDuplicate, onEditExisting}: Props) 
   }
   function stopCamera() { stopRef.current?.(); stopRef.current = null; setCamera(false); }
 
-  async function search(raw: string = code) {
-    const c = normalizeBarcode(raw);
+  async function search() {
+    const c = normalizeBarcode(code);
     setCode(c); setDup(undefined);
     if (!isValidBarcode(c)) { setFieldError('Ingresá un código de 6 a 14 números.'); return; }
     setFieldError('');
@@ -63,12 +60,11 @@ export function BarcodeScanner({onFound, findDuplicate, onEditExisting}: Props) 
     if (existing) { setDup(existing); setStatus('idle'); return; }
     setStatus('searching');
     try {
-      const r = await lookup({data: {code: c}});
-      setStatus(r.status);
-      onFound(c, r.status === 'found' ? r.product : null);
+      const data = await lookupBarcode(c);
+      setStatus(data ? 'found' : 'not-found');
+      onFound(c, data);
     } catch {
       setStatus('error');
-      onFound(c, null);
     }
   }
 
@@ -91,12 +87,9 @@ export function BarcodeScanner({onFound, findDuplicate, onEditExisting}: Props) 
     {dup && <div role="alert" className="scanner-status warn"><AlertTriangle size={16}/><span>Este código ya está registrado como <b>{dup}</b>.</span><Button type="button" size="sm" variant="outline" onClick={() => onEditExisting(normalizeBarcode(code))}>Editar el existente</Button></div>}
     <div aria-live="polite">
       {status === 'searching' && <p className="scanner-status"><Loader2 size={16} className="animate-spin"/>Buscando producto…</p>}
-      {status === 'found' && <p className="scanner-status ok"><CheckCircle2 size={16}/>Producto encontrado en ez-catalog. Revisá los datos, agregá tu foto y asigná tu precio.</p>}
-      {status === 'not-found' && <p className="scanner-status warn"><AlertTriangle size={16}/>Producto no encontrado en ez-catalog. Completá los datos a mano.</p>}
-      {status === 'error' && <p className="scanner-status warn"><WifiOff size={16}/>Error de conexión con ez-catalog. Podés reintentar o completar los datos a mano.</p>}
-      {status === 'not-configured' && <p className="scanner-status warn"><AlertTriangle size={16}/>La búsqueda automática todavía no está configurada. Completá los datos a mano.</p>}
-      {status === 'unauthorized' && <p className="scanner-status warn"><AlertTriangle size={16}/>ez-catalog rechazó la clave de acceso. Completá los datos a mano.</p>}
-      {status === 'rate-limited' && <p className="scanner-status warn"><AlertTriangle size={16}/>Se alcanzó el límite de consultas de ez-catalog. Esperá un minuto o completá los datos a mano.</p>}
+      {status === 'found' && <p className="scanner-status ok"><CheckCircle2 size={16}/>Producto encontrado en Open Food Facts. Revisá los datos y asigná tu precio.</p>}
+      {status === 'not-found' && <p className="scanner-status warn"><AlertTriangle size={16}/>Producto no encontrado. Completá los datos a mano.</p>}
+      {status === 'error' && <p className="scanner-status warn"><WifiOff size={16}/>Error de conexión. Podés reintentar o completar los datos a mano.</p>}
     </div>
   </div>;
 }
